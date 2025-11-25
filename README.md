@@ -1,137 +1,182 @@
 # Job Deck
 
-Job Deck is a personal **Job Application Command Center** – a mini ATS and analytics dashboard that helps you track your job search like a pro.
+Job Deck is a fully-featured **Job Application Command Center** — a personal mini ATS that helps you track your job search, manage your pipeline, analyze performance, and maintain a complete candidate profile.
 
-It’s designed to showcase:
-
-- Modern **React** skills
-- Clean **Ant Design** UI
-- Real-world **state management** with **Redux Toolkit** and **Zustand**
-- A scalable **dashboard-style layout** suitable for real applications
+This project demonstrates **modern React engineering**, clean UI/UX design, state architecture, authentication, and real-world dashboard patterns.
 
 ---
 
-## 🚀 Features
+## ✨ Features
 
-### Current (MVP Skeleton)
+### 🔐 Authentication (Clerk)
 
-- ⚛️ **React + Vite** setup for a fast, modern dev experience
-- 🎨 **Ant Design layout shell** with:
-  - Sidebar navigation
-  - Top header
-  - Content area for pages
-- 🧭 **Routing with React Router**:
-  - `/` – Dashboard
-  - `/pipeline` – Pipeline Board
-  - `/jobs` – Jobs List
-  - `/jobs/:jobId` – Job Detail
-- 🧱 **Initial state management layer**:
-  - `jobsSlice` – base structure for job entities
-  - `activitiesSlice` – base structure for job-related activities
-  - `uiStore` (Zustand) – base structure for UI filters and preferences
+- Secure login & signup
+- Protected routes
+- User session-aware UI
+- Sidebar profile section with avatar + navigation
+- All profile data tied to the logged-in user
 
-### Planned (Upcoming)
+---
 
-> These are the features Job Deck is designed to support and will be built next:
+### 📊 Dashboard
 
-- 📊 **Dashboard analytics**
-  - Total applications, active pipeline, offers
-  - Charts for applications per week, by source, and by status
-- 🗂 **Kanban-style pipeline board**
-  - Columns by job status (Saved, Applied, Interview, Offer, Rejected)
-  - Drag-and-drop between stages
-- 📋 **Jobs table with filters**
-  - Search, sorting, and filtering by status, source, location, etc.
-- 📝 **Job detail view**
-  - Full job info, notes, tags, and history
-  - Activity timeline (applied, follow-ups, interviews)
-- 🔔 **Reminders & follow-ups**
-  - Tasks or reminders related to each job
-- 💾 **Data persistence**
-  - Local storage for saving state across sessions
-  - Optional future backend integration (Node/Express or similar)
+A clean, pastel-themed analytics dashboard featuring:
+
+- Application statistics (live from job data)
+- Weekly applications chart
+- Status distribution chart
+- Calendar widget
+- Recent activities
+- Fully responsive card layout
+
+---
+
+### 🗂 Pipeline (Kanban Board)
+
+A drag-and-drop pipeline built with HTML5 DnD:
+
+- Status columns:  
+  **Saved → Applied → Interview → Offer → Rejected**
+- Move jobs between columns by dragging
+- Updates job status instantly in Redux
+- Smooth UI, mobile-friendly, professional layout
+
+---
+
+### 📋 Jobs Module
+
+Complete job tracking system:
+
+- Add / edit / delete jobs
+- Status dropdown
+- Jobs table with:
+  - Search
+  - Status filter
+  - Source filter
+- Job detail page with timeline + notes
+- All job data persisted
+
+---
+
+### 🧠 Profile Management
+
+A fully editable, multi-section candidate profile:
+
+#### Sections:
+
+- **Basic Info**  
+  (title, employer, notice period, location, work mode, preferred roles/locations)
+- **Skills** (tags editor)
+- **Experience**
+  - Month pickers
+  - “Currently working here” toggle
+  - Timeline view
+- **Education**
+  - Multiple entries
+  - Month pickers
+  - “Currently pursuing” toggle
+- **Summary**
+- **Career Focus**
+- **Resume Upload**
+  - Via a dedicated drawer
+  - Stores metadata (filename, size, updated at)
+
+#### Additional UX features:
+
+- Snapshot sidebar showing preferred roles & locations
+- Profile completeness (dynamic, % based on sections filled)
+- Smooth scrolling with header offset
+
+---
+
+### 💾 Data Persistence
+
+All important data is persisted using:
+
+- **Redux Toolkit**  
+  (jobs, activities, profile)
+- **Zustand**  
+  (UI filters, view state)
+- **localStorage**  
+  (full Redux state persistence)
+
+Per-user persistence via Clerk user ID.
+
+---
+
+### 🎨 UI / UX Enhancements
+
+- Full pastel theme
+- Global theme tokens
+- Sticky header + fixed sidebar
+- Collapsible sidebar with centered avatar
+- Consistent card heights
+- Responsive grid layout
+- Modern, soft shadow design
 
 ---
 
 ## 🧰 Tech Stack
 
-- **Frontend Framework**: [React](https://react.dev/)
-- **Build Tool**: [Vite](https://vitejs.dev/)
-- **UI Library**: [Ant Design](https://ant.design/)
-- **Routing**: [React Router](https://reactrouter.com/)
-- **State Management (Domain State)**: [Redux Toolkit](https://redux-toolkit.js.org/) + [React-Redux](https://react-redux.js.org/)
-- **State Management (UI State)**: [Zustand](https://zustand-demo.pmnd.rs/)
-- **Icons**: [@ant-design/icons](https://ant.design/components/icon/)
-- **Utility**: [Day.js](https://day.js.org/) (for dates – optional/enabled as needed)
+- **React (Vite)**
+- **React Router**
+- **Ant Design**
+- **Redux Toolkit**
+- **Zustand**
+- **Clerk Authentication**
+- **Day.js**
+- **HTML5 Drag & Drop**
+- **localStorage Persistence**
 
 ---
 
-## 🏗 Architecture Overview
+### 🧱 State Layers
 
-Job Deck is structured to look and feel like a real-world dashboard application.
-
-### Pages
-
-- `DashboardPage` – High-level overview and analytics for your job search
-- `PipelinePage` – Kanban board showing job applications by status
-- `JobsPage` – Table view of all jobs with filters/search
-- `JobDetailPage` – Detailed view for a single job, activities, and notes
-
-### Layout
-
-All pages are wrapped inside a shared `MainLayout`:
-
-- **Sider** – Left navigation (Dashboard / Pipeline / Jobs)
-- **Header** – App title and future actions
-- **Content** – Renders the active page via React Router
-
-### State Management Split
-
-- **Redux Toolkit** – Stores the core **business/domain data**:
-  - `jobsSlice` – All job entries
-    - Normalized structure: `{ byId: {}, allIds: [] }`
-  - `activitiesSlice` – Activities grouped by `jobId`
-    - Structure: `{ byJobId: { [jobId]: Activity[] } }`
-- **Zustand (`uiStore`)** – Stores **UI-focused state**:
-  - Filters for the jobs list (status, source, search keyword)
-  - Potential UI settings like layout mode, selected tabs, etc.
-- **Local Component State** – Form inputs, modals, and small view-specific state
-
-This separation makes it easier to demonstrate good architectural decisions:
-
-- Redux for **persistent, shared data**
-- Zustand for **ephemeral UI/control state**
-- Local state for **component-level concerns**
+| Layer               | Purpose                                            |
+| ------------------- | -------------------------------------------------- |
+| **Redux Toolkit**   | Persistent domain data (jobs, activities, profile) |
+| **Zustand**         | UI state (filters, view options)                   |
+| **Component State** | Forms, modals, drawers                             |
 
 ---
 
-## 📁 Project Structure
+## 📦 Installation
 
-High-level structure (simplified):
+- **git clone <repo-url>**
+- **cd job-deck**
+- **npm install**
+- **npm run dev**
 
-```bash
-src/
-  components/          # Reusable shared components (to be added)
-  features/
-    jobs/
-      jobsSlice.js     # Redux slice for jobs
-    activities/
-      activitiesSlice.js  # Redux slice for activities
-  hooks/               # Custom hooks (to be added)
-  layout/
-    MainLayout.jsx     # Ant Design app shell (sider + header + content)
-  pages/
-    Dashboard/
-      DashboardPage.jsx
-    Pipeline/
-      PipelinePage.jsx
-    Jobs/
-      JobsPage.jsx
-    JobDetail/
-      JobDetailPage.jsx
-  store/
-    store.js           # Redux store configuration
-    uiStore.js         # Zustand UI state store
-  App.jsx              # Route configuration and layout usage
-  main.jsx             # Root render, providers (Redux, Router, AntD)
-```
+Create `.env` file:
+
+VITE_CLERK_PUBLISHABLE_KEY=your-public-key
+
+---
+
+## 🚀 Deployment (Recommended: Vercel)
+
+1. Push repo to GitHub
+2. Import repo into Vercel
+3. Add environment variable:
+
+VITE_CLERK_PUBLISHABLE_KEY=your-public-key
+
+4. Deploy → Live 🎉
+
+---
+
+## 🙌 About This Project
+
+This project was built to demonstrate:
+
+- Real-world dashboard architecture
+- Advanced state management
+- Authentication workflows
+- Multi-section form handling
+- Drag-and-drop interactions
+- UI theming & clean styling
+- SPA routing with protected pages
+
+Perfect as a **portfolio project**, **ATS simulator**, or **job search companion tool**.
+
+---
