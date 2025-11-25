@@ -2,7 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import MainLayout from "./layout/MainLayout.jsx";
 import DashboardPage from "./pages/Dashboard/DashboardPage.jsx";
 import PipelinePage from "./pages/Pipeline/PipelinePage.jsx";
-import JobsPage from "./pages/Jobs/JobPage.jsx";
+import JobsPage from "./pages/Jobs/JobsPage.jsx";
 import JobDetailPage from "./pages/JobDetail/JobDetailPage.jsx";
 
 function App() {

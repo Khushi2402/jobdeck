@@ -40,4 +40,9 @@ const jobsSlice = createSlice({
 });
 
 export const { addJob, updateJob } = jobsSlice.actions;
+
+// Selector to get all jobs as an array
+export const selectAllJobs = (state) =>
+  state.jobs.allIds.map((id) => state.jobs.byId[id]);
+
 export default jobsSlice.reducer;
