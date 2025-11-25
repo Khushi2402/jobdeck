@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Button,
@@ -13,18 +13,32 @@ import {
 } from "antd";
 import { useNavigate } from "react-router-dom";
 import { addJob, selectAllJobs } from "../../features/jobs/jobSlice";
+import { useUIStore } from "../../store/uiStore";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
+const { Search } = Input;
 
 const JobsPage = () => {
   const dispatch = useDispatch();
   const jobs = useSelector(selectAllJobs);
+  const { jobFilters, setJobFilters } = useUIStore();
+
+  const { status: statusFilter, source: sourceFilter, search } = jobFilters;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
 
   const navigate = useNavigate();
+
+  const statusColors = {
+    saved: "default",
+    applied: "blue",
+    assessment: "purple",
+    interview: "gold",
+    offer: "green",
+    rejected: "red",
+  };
 
   const columns = [
     {
@@ -49,6 +63,17 @@ const JobsPage = () => {
       key: "source",
     },
     {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      render: (status) => {
+        const color = statusColors[status] || "default";
+        const label =
+          status?.charAt(0).toUpperCase() + status?.slice(1) || "Saved";
+        return <Tag color={color}>{label}</Tag>;
+      },
+    },
+    {
       title: "Tags",
       dataIndex: "tags",
       key: "tags",
@@ -64,6 +89,34 @@ const JobsPage = () => {
         ),
     },
   ];
+
+  const filteredJobs = useMemo(() => {
+    const searchLower = search.trim().toLowerCase();
+
+    return jobs.filter((job) => {
+      // Status filter
+      if (statusFilter !== "all" && (job.status || "saved") !== statusFilter) {
+        return false;
+      }
+
+      // Source filter
+      if (sourceFilter !== "all" && (job.source || "Other") !== sourceFilter) {
+        return false;
+      }
+
+      // Text search on title + company
+      if (searchLower) {
+        const haystack = `${job.title || ""} ${
+          job.company || ""
+        }`.toLowerCase();
+        if (!haystack.includes(searchLower)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [jobs, statusFilter, sourceFilter, search]);
 
   const handleOpenModal = () => {
     setIsModalOpen(true);
@@ -121,13 +174,65 @@ const JobsPage = () => {
         </Button>
       </Space>
 
+      <Space
+        style={{
+          marginBottom: 16,
+          width: "100%",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+        }}
+        align="center"
+      >
+        <Space wrap>
+          <Select
+            value={statusFilter}
+            style={{ width: 180 }}
+            onChange={(value) => setJobFilters({ status: value })}
+          >
+            <Option value="all">All statuses</Option>
+            <Option value="saved">Saved</Option>
+            <Option value="applied">Applied</Option>
+            <Option value="assessment">Assessment</Option>
+            <Option value="interview">Interview</Option>
+            <Option value="offer">Offer</Option>
+            <Option value="rejected">Rejected</Option>
+          </Select>
+
+          <Select
+            value={sourceFilter}
+            style={{ width: 180 }}
+            onChange={(value) => setJobFilters({ source: value })}
+          >
+            <Option value="all">All sources</Option>
+            <Option value="LinkedIn">LinkedIn</Option>
+            <Option value="Naukri">Naukri</Option>
+            <Option value="Company Site">Company Site</Option>
+            <Option value="Referral">Referral</Option>
+            <Option value="Other">Other</Option>
+          </Select>
+        </Space>
+
+        <Search
+          placeholder="Search by title or company"
+          allowClear
+          value={search}
+          onChange={(e) => setJobFilters({ search: e.target.value })}
+          style={{ maxWidth: 260 }}
+        />
+      </Space>
+
       {jobs.length === 0 ? (
         <Text type="secondary">
           No jobs yet. Click &quot;Add job&quot; to create your first entry.
         </Text>
+      ) : filteredJobs.length === 0 ? (
+        <Text type="secondary">
+          No jobs match the current filters. Try changing filters or clearing
+          the search.
+        </Text>
       ) : (
         <Table
-          dataSource={jobs}
+          dataSource={filteredJobs}
           columns={columns}
           rowKey="id"
           pagination={false}

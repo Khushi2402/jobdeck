@@ -12,7 +12,7 @@ import {
   Input,
   Select,
 } from "antd";
-import { selectJobById } from "../../features/jobs/jobSlice";
+import { selectJobById, updateJob } from "../../features/jobs/jobSlice";
 import {
   addActivity,
   selectActivitiesByJobId,
@@ -45,6 +45,17 @@ const JobDetailPage = () => {
       })
     );
     form.resetFields();
+  };
+
+  const handleStatusChange = (value) => {
+    dispatch(
+      updateJob({
+        id: jobId,
+        changes: {
+          status: value,
+        },
+      })
+    );
   };
 
   if (!job) {
@@ -89,8 +100,20 @@ const JobDetailPage = () => {
 
       <Space direction="vertical" size="middle" style={{ width: "100%" }}>
         <div>
-          <Text strong>Status:</Text>{" "}
-          <Tag color="blue">{job.status || "saved"}</Tag>
+          <Text strong>Status:&nbsp;</Text>
+          <Select
+            size="small"
+            value={job.status || "saved"}
+            style={{ minWidth: 140 }}
+            onChange={handleStatusChange}
+          >
+            <Option value="saved">Saved</Option>
+            <Option value="applied">Applied</Option>
+            <Option value="assessment">Assessment</Option>
+            <Option value="interview">Interview</Option>
+            <Option value="offer">Offer</Option>
+            <Option value="rejected">Rejected</Option>
+          </Select>
         </div>
 
         <div>
