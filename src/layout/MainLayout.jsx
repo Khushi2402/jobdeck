@@ -7,6 +7,7 @@ import {
   TableOutlined,
 } from "@ant-design/icons";
 import { Link, useLocation } from "react-router-dom";
+import { SignedIn, UserButton } from "@clerk/clerk-react";
 import { appTheme } from "../theme";
 
 const { Header, Sider, Content } = Layout;
@@ -54,7 +55,7 @@ const MainLayout = ({ children }) => {
           boxShadow: "4px 0 24px rgba(15, 23, 42, 0.65)",
         }}
       >
-        {/* Logo area */}
+        {/* Logo */}
         <div
           style={{
             height: 64,
@@ -73,7 +74,6 @@ const MainLayout = ({ children }) => {
               background: `radial-gradient(circle at 30% 30%, #fecaca, ${appTheme.colors.sidebarAccent})`,
             }}
           />
-          {/* 🔥 Hide text completely when collapsed */}
           {!collapsed && (
             <Text
               style={{
@@ -88,7 +88,6 @@ const MainLayout = ({ children }) => {
           )}
         </div>
 
-        {/* Navigation */}
         <Menu
           theme="dark"
           mode="inline"
@@ -123,8 +122,21 @@ const MainLayout = ({ children }) => {
               fontSize: 16,
             }}
           >
-            Job Deck
+            Job Application Command Center
           </Text>
+
+          {/* Right side: Clerk user button when signed in */}
+          <SignedIn>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <UserButton afterSignOutUrl="/sign-in" />
+            </div>
+          </SignedIn>
         </Header>
 
         <Content
