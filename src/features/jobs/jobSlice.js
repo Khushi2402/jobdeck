@@ -36,10 +36,17 @@ const jobsSlice = createSlice({
         };
       }
     },
+    deleteJob(state, action) {
+      const id = action.payload;
+      if (state.byId[id]) {
+        delete state.byId[id];
+        state.allIds = state.allIds.filter((jobId) => jobId !== id);
+      }
+    },
   },
 });
 
-export const { addJob, updateJob } = jobsSlice.actions;
+export const { addJob, updateJob, deleteJob } = jobsSlice.actions;
 
 const selectJobsState = (state) => state.jobs;
 

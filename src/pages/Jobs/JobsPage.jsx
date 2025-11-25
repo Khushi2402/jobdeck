@@ -11,9 +11,17 @@ import {
   Select,
   Table,
   Card,
+  Popconfirm,
+  message,
 } from "antd";
 import { useNavigate } from "react-router-dom";
-import { addJob, selectAllJobs } from "../../features/jobs/jobSlice";
+import {
+  addJob,
+  selectAllJobs,
+  updateJob,
+  deleteJob,
+} from "../../features/jobs/jobSlice";
+import { removeActivitiesForJob } from "../../features/activities/activitiesSlice";
 import { useUIStore } from "../../store/uiStore";
 import { appTheme } from "../../theme";
 
@@ -30,6 +38,8 @@ const JobsPage = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
+  const [editingJobId, setEditingJobId] = useState(null);
+  const [modalMode, setModalMode] = useState("add"); // 'add' | 'edit'
 
   const navigate = useNavigate();
 
@@ -90,6 +100,44 @@ const JobsPage = () => {
           <Text type="secondary">No tags</Text>
         ),
     },
+    {
+      title: "Actions",
+      key: "actions",
+      render: (_, record) => (
+        <Space size="small">
+          <Button
+            type="link"
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleOpenEditModal(record);
+            }}
+          >
+            Edit
+          </Button>
+          <Popconfirm
+            title="Delete job"
+            description="Are you sure you want to delete this job and its activities?"
+            okText="Yes"
+            cancelText="No"
+            onConfirm={(e) => {
+              e?.stopPropagation();
+              handleDeleteJob(record.id);
+            }}
+            onCancel={(e) => e?.stopPropagation()}
+          >
+            <Button
+              type="link"
+              size="small"
+              danger
+              onClick={(e) => e.stopPropagation()}
+            >
+              Delete
+            </Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
   ];
 
   const filteredJobs = useMemo(() => {
@@ -121,6 +169,23 @@ const JobsPage = () => {
   }, [jobs, statusFilter, sourceFilter, search]);
 
   const handleOpenModal = () => {
+    setModalMode("add");
+    setEditingJobId(null);
+    form.resetFields();
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (job) => {
+    setModalMode("edit");
+    setEditingJobId(job.id);
+    form.setFieldsValue({
+      title: job.title,
+      company: job.company,
+      location: job.location,
+      source: job.source,
+      tags: job.tags,
+      link: job.link,
+    });
     setIsModalOpen(true);
   };
 
@@ -130,32 +195,34 @@ const JobsPage = () => {
   };
 
   const handleFinish = (values) => {
-    // values = { title, company, location, source, tags, link }
-    dispatch(
-      addJob({
-        ...values,
-        // ensure tags is always an array
-        tags: values.tags || [],
-        // default status for new jobs
-        status: "saved",
-      })
-    );
+    const payload = {
+      ...values,
+      tags: values.tags || [],
+      status: values.status || undefined, // we still default to 'saved' in addJob
+    };
+
+    if (modalMode === "add") {
+      dispatch(addJob(payload));
+      message.success("Job added");
+    } else if (modalMode === "edit" && editingJobId) {
+      dispatch(
+        updateJob({
+          id: editingJobId,
+          changes: payload,
+        })
+      );
+      message.success("Job updated");
+    }
+
     setIsModalOpen(false);
+    setEditingJobId(null);
     form.resetFields();
   };
 
-  const handleAddSampleJob = () => {
-    dispatch(
-      addJob({
-        title: "Frontend Engineer",
-        company: "Sample Corp",
-        location: "Remote",
-        source: "LinkedIn",
-        status: "saved", // will be overridden in prepare, but fine
-        tags: ["React", "Remote", "Frontend"],
-        link: "https://example.com/job/frontend",
-      })
-    );
+  const handleDeleteJob = (jobId) => {
+    dispatch(deleteJob(jobId));
+    dispatch(removeActivitiesForJob(jobId));
+    message.success("Job deleted");
   };
 
   return (
@@ -266,13 +333,13 @@ const JobsPage = () => {
 
       {/* Add Job Modal (unchanged) */}
       <Modal
-        title="Add Job"
+        title={modalMode === "add" ? "Add Job" : "Edit Job"}
         open={isModalOpen}
         onCancel={handleCancel}
         onOk={() => {
           form.submit();
         }}
-        okText="Save"
+        okText={modalMode === "add" ? "Add Job" : "Save Changes"}
       >
         <Form
           form={form}

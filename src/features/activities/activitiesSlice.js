@@ -26,11 +26,17 @@ const activitiesSlice = createSlice({
           },
         };
       },
+      removeActivitiesForJob(state, action) {
+        const jobId = action.payload;
+        if (state.byJobId[jobId]) {
+          delete state.byJobId[jobId];
+        }
+      },
     },
   },
 });
 
-export const { addActivity } = activitiesSlice.actions;
+export const { addActivity, removeActivitiesForJob } = activitiesSlice.actions;
 
 export const selectActivitiesByJobId = (state, jobId) =>
   state.activities.byJobId[jobId] || [];
@@ -49,4 +55,3 @@ export const selectAllActivities = (state) => {
 };
 
 export default activitiesSlice.reducer;
-
