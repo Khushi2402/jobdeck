@@ -31,4 +31,8 @@ const activitiesSlice = createSlice({
 });
 
 export const { addActivity } = activitiesSlice.actions;
+
+export const selectActivitiesByJobId = (state, jobId) =>
+  state.activities.byJobId[jobId] || [];
+
 export default activitiesSlice.reducer;

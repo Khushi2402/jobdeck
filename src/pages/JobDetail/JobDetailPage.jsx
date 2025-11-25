@@ -1,15 +1,51 @@
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
-import { Button, Descriptions, Space, Tag, Typography, Result } from "antd";
+import {
+  Button,
+  Descriptions,
+  Space,
+  Tag,
+  Typography,
+  Result,
+  Timeline,
+  Form,
+  Input,
+  Select,
+} from "antd";
 import { selectJobById } from "../../features/jobs/jobSlice";
+import {
+  addActivity,
+  selectActivitiesByJobId,
+} from "../../features/activities/activitiesSlice";
 
 const { Title, Text, Paragraph } = Typography;
+const { TextArea } = Input;
+const { Option } = Select;
 
 const JobDetailPage = () => {
   const { jobId } = useParams();
   const navigate = useNavigate();
 
   const job = useSelector((state) => selectJobById(state, jobId));
+
+  const dispatch = useDispatch();
+  const activities = useSelector((state) =>
+    selectActivitiesByJobId(state, jobId)
+  );
+
+  const [form] = Form.useForm();
+
+  const handleAddActivity = (values) => {
+    dispatch(
+      addActivity({
+        jobId,
+        type: values.type,
+        title: values.title,
+        description: values.description,
+      })
+    );
+    form.resetFields();
+  };
 
   if (!job) {
     return (
@@ -107,13 +143,100 @@ const JobDetailPage = () => {
         </Descriptions.Item>
       </Descriptions>
 
-      <div>
-        <Title level={5}>Notes</Title>
-        <Paragraph type="secondary">
-          Notes, follow-ups, and activity timeline will be added here in the
-          next steps.
-        </Paragraph>
-      </div>
+      <Space
+        align="start"
+        style={{ width: "100%", justifyContent: "space-between" }}
+      >
+        {/* Activity Timeline */}
+        <div style={{ flex: 2, marginRight: 24 }}>
+          <Title level={5}>Activity Timeline</Title>
+          {activities.length === 0 ? (
+            <Text type="secondary">
+              No activity yet. Add your first activity using the form on the
+              right.
+            </Text>
+          ) : (
+            <Timeline
+              items={activities
+                .slice()
+                .sort(
+                  (a, b) =>
+                    new Date(a.date).getTime() - new Date(b.date).getTime()
+                )
+                .map((activity) => ({
+                  color: "blue",
+                  children: (
+                    <div>
+                      <Text strong>{activity.title}</Text>
+                      <br />
+                      <Text type="secondary">
+                        {new Date(activity.date).toLocaleString()} •{" "}
+                        {activity.type}
+                      </Text>
+                      {activity.description && (
+                        <Paragraph style={{ marginTop: 4, marginBottom: 0 }}>
+                          {activity.description}
+                        </Paragraph>
+                      )}
+                    </div>
+                  ),
+                }))}
+            />
+          )}
+        </div>
+
+        {/* Add Activity Form */}
+        <div style={{ flex: 1 }}>
+          <Title level={5}>Add Activity</Title>
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={handleAddActivity}
+            initialValues={{
+              type: "note",
+            }}
+          >
+            <Form.Item
+              label="Type"
+              name="type"
+              rules={[
+                { required: true, message: "Please select activity type" },
+              ]}
+            >
+              <Select>
+                <Option value="applied">Applied</Option>
+                <Option value="follow_up">Follow-up</Option>
+                <Option value="interview">Interview</Option>
+                <Option value="offer">Offer</Option>
+                <Option value="note">Note</Option>
+              </Select>
+            </Form.Item>
+
+            <Form.Item
+              label="Title"
+              name="title"
+              rules={[
+                { required: true, message: "Please enter activity title" },
+              ]}
+            >
+              <Input placeholder="e.g. Applied on company site" />
+            </Form.Item>
+
+            <Form.Item label="Description" name="description">
+              <TextArea
+                rows={3}
+                placeholder="Optional details, like what you discussed or sent"
+              />
+            </Form.Item>
+
+            <Form.Item>
+              <Button type="primary" htmlType="submit" block>
+                Add Activity
+              </Button>
+            </Form.Item>
+          </Form>
+        </div>
+      </Space>
     </Space>
   );
 };
