@@ -1,5 +1,5 @@
 // src/layout/MainLayout.jsx
-import React from "react";
+import React, { useState } from "react";
 import { Layout, Menu, Typography } from "antd";
 import {
   AppstoreOutlined,
@@ -14,6 +14,7 @@ const { Text } = Typography;
 
 const MainLayout = ({ children }) => {
   const location = useLocation();
+  const [collapsed, setCollapsed] = useState(false);
 
   const menuItems = [
     {
@@ -38,49 +39,67 @@ const MainLayout = ({ children }) => {
 
   return (
     <Layout
-      style={{ minHeight: "100vh", background: appTheme.colors.background }}
+      style={{
+        minHeight: "100vh",
+        background: appTheme.colors.background,
+      }}
     >
       <Sider
         collapsible
+        collapsed={collapsed}
+        onCollapse={setCollapsed}
         width={230}
         style={{
           background: appTheme.colors.sidebarBg,
+          boxShadow: "4px 0 24px rgba(15, 23, 42, 0.65)",
         }}
       >
+        {/* Logo area */}
         <div
           style={{
             height: 64,
             margin: 16,
             display: "flex",
             alignItems: "center",
-            gap: 10,
+            justifyContent: collapsed ? "center" : "flex-start",
+            gap: collapsed ? 0 : 10,
           }}
         >
           <div
             style={{
-              width: 24,
-              height: 24,
+              width: collapsed ? 20 : 24,
+              height: collapsed ? 20 : 24,
               borderRadius: "999px",
-              background: appTheme.colors.sidebarAccent,
+              background: `radial-gradient(circle at 30% 30%, #fecaca, ${appTheme.colors.sidebarAccent})`,
             }}
           />
-          <Text
-            style={{
-              color: appTheme.colors.sidebarText,
-              fontWeight: 600,
-              fontSize: 18,
-              letterSpacing: 0.5,
-            }}
-          >
-            Job Deck
-          </Text>
+          {/* 🔥 Hide text completely when collapsed */}
+          {!collapsed && (
+            <Text
+              style={{
+                color: appTheme.colors.sidebarText,
+                fontWeight: 600,
+                fontSize: 18,
+                letterSpacing: 0.5,
+              }}
+            >
+              Job Deck
+            </Text>
+          )}
         </div>
+
+        {/* Navigation */}
         <Menu
           theme="dark"
           mode="inline"
+          inlineCollapsed={collapsed}
           selectedKeys={[currentKey]}
           items={menuItems}
-          style={{ borderRight: "none" }}
+          style={{
+            borderRight: "none",
+            background: "transparent",
+            paddingTop: 8,
+          }}
         />
       </Sider>
 
@@ -104,7 +123,7 @@ const MainLayout = ({ children }) => {
               fontSize: 16,
             }}
           >
-            Job Application Command Center
+            Job Deck
           </Text>
         </Header>
 

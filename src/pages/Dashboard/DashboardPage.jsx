@@ -27,6 +27,7 @@ import { selectAllActivities } from "../../features/activities/activitiesSlice";
 import { appTheme } from "../../theme";
 
 const { Title, Text } = Typography;
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -180,95 +181,115 @@ const DashboardPage = () => {
     border: "none",
   });
 
+  const fullCard = {
+    height: "100%",
+    display: "flex",
+    flexDirection: "column",
+  };
+
   return (
     <div>
       <Title level={3} style={{ marginBottom: 24 }}>
         Dashboard
       </Title>
 
-      <Row gutter={20}>
-        {/* LEFT SIDE: stats and lists */}
+      {/* Top summary stats – 5 colorful cards */}
+      <div
+        style={{ display: "flex", gap: 20, marginBottom: 24, flexWrap: "wrap" }}
+      >
+        <Card
+          style={{
+            ...statCardStyle(appTheme.colors.cardYellow),
+            flex: 1,
+            minWidth: 160,
+          }}
+          bordered={false}
+        >
+          <Statistic title="Total Applications" value={totalJobs} />
+        </Card>
+
+        <Card
+          style={{
+            ...statCardStyle(appTheme.colors.cardPink),
+            flex: 1,
+            minWidth: 160,
+          }}
+          bordered={false}
+        >
+          <Statistic title="Applied" value={appliedCount} />
+        </Card>
+
+        <Card
+          style={{
+            ...statCardStyle(appTheme.colors.cardBlue),
+            flex: 1,
+            minWidth: 160,
+          }}
+          bordered={false}
+        >
+          <Statistic title="Interviews" value={interviewCount} />
+        </Card>
+
+        <Card
+          style={{
+            ...statCardStyle(appTheme.colors.cardGreen),
+            flex: 1,
+            minWidth: 160,
+          }}
+          bordered={false}
+        >
+          <Statistic title="Offers" value={offerCount} />
+        </Card>
+
+        {/* New colored card: Applications This Week */}
+        <Card
+          style={{
+            ...statCardStyle("#ffeef6"),
+            flex: 1,
+            minWidth: 160,
+          }}
+          bordered={false}
+        >
+          <Statistic
+            title="Applications This Week"
+            value={thisWeekCount}
+            suffix="job(s)"
+          />
+        </Card>
+      </div>
+
+      {/* Middle row: Upcoming Activities + Calendar, equal-ish height */}
+      <Row gutter={20} align="stretch">
         <Col xs={24} lg={16}>
-          <Row gutter={[16, 16]}>
-            <Col xs={24} sm={12}>
-              <Card
-                style={statCardStyle(appTheme.colors.cardYellow)}
-                bordered={false}
-              >
-                <Statistic title="Total Applications" value={totalJobs} />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12}>
-              <Card
-                style={statCardStyle(appTheme.colors.cardPink)}
-                bordered={false}
-              >
-                <Statistic title="Applied" value={appliedCount} />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12}>
-              <Card
-                style={statCardStyle(appTheme.colors.cardBlue)}
-                bordered={false}
-              >
-                <Statistic title="Interviews" value={interviewCount} />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12}>
-              <Card
-                style={statCardStyle(appTheme.colors.cardGreen)}
-                bordered={false}
-              >
-                <Statistic title="Offers" value={offerCount} />
-              </Card>
-            </Col>
-
-            <Col xs={24} sm={12}>
-              <Card bordered={false}>
-                <Statistic
-                  title="Applications This Week"
-                  value={thisWeekCount}
-                  suffix="job(s)"
-                />
-                <Text type="secondary">
-                  New applications created since Monday.
-                </Text>
-              </Card>
-            </Col>
-
-            <Col xs={24} sm={12}>
-              <Card title="Upcoming Activities" bordered={false}>
-                {upcomingActivities.length === 0 ? (
-                  <Text type="secondary">
-                    No upcoming activities. Add follow-ups on job detail pages.
-                  </Text>
-                ) : (
-                  <List
-                    dataSource={upcomingActivities}
-                    renderItem={(activity) => (
-                      <List.Item>
-                        <Space direction="vertical" size={0}>
-                          <Space>
-                            <Tag>{activity.type}</Tag>
-                            <Text strong>{activity.title}</Text>
-                          </Space>
-                          <Text type="secondary">
-                            {new Date(activity.date).toLocaleString()}
-                          </Text>
-                          {activity.description && (
-                            <Text type="secondary">{activity.description}</Text>
-                          )}
-                        </Space>
-                      </List.Item>
-                    )}
-                  />
+          <Card title="Upcoming Activities" bordered={false} style={fullCard}>
+            {upcomingActivities.length === 0 ? (
+              <Text type="secondary">
+                No upcoming activities. Add follow-ups on job detail pages.
+              </Text>
+            ) : (
+              <List
+                dataSource={upcomingActivities}
+                renderItem={(activity) => (
+                  <List.Item>
+                    <Space direction="vertical" size={0}>
+                      <Space>
+                        <Tag>{activity.type}</Tag>
+                        <Text strong>{activity.title}</Text>
+                      </Space>
+                      <Text type="secondary">
+                        {new Date(activity.date).toLocaleString()}
+                      </Text>
+                      {activity.description && (
+                        <Text type="secondary">{activity.description}</Text>
+                      )}
+                    </Space>
+                  </List.Item>
                 )}
-              </Card>
-            </Col>
-          </Row>
+              />
+            )}
+          </Card>
         </Col>
 
-        {/* RIGHT SIDE: calendar at top-right */}
         <Col xs={24} lg={8}>
           <Card
             title="Calendar"
@@ -276,74 +297,80 @@ const DashboardPage = () => {
             style={{
               borderRadius: 18,
               background: "#ffeef6",
-              marginBottom: 16,
+              height: "100%",
             }}
           >
             <Calendar fullscreen={false} />
           </Card>
         </Col>
       </Row>
-      <Row gutter={20} style={{ marginTop: 24 }}>
-        <Col xs={24} md={14}>
-          <Card title="Applications by status" bordered={false}>
-            {totalJobs === 0 ? (
-              <Text type="secondary">
-                Add some jobs to see applications by status.
-              </Text>
-            ) : (
+
+      {/* Bottom: charts row, equal heights */}
+      <div
+        style={{ display: "flex", gap: 20, marginTop: 24, flexWrap: "wrap" }}
+      >
+        <Card
+          title="Applications by status"
+          bordered={false}
+          style={{ ...fullCard, flex: 1, minWidth: 260 }}
+        >
+          {totalJobs === 0 ? (
+            <Text type="secondary">
+              Add some jobs to see applications by status.
+            </Text>
+          ) : (
+            <div style={{ height: 280 }}>
               <Bar
                 data={statusChartData}
                 options={{
                   responsive: true,
+                  maintainAspectRatio: false,
                   plugins: {
-                    legend: {
-                      display: false,
-                    },
+                    legend: { display: false },
                   },
                   scales: {
                     x: {
-                      grid: {
-                        display: false,
-                      },
+                      grid: { display: false },
                     },
                     y: {
                       beginAtZero: true,
-                      ticks: {
-                        precision: 0,
-                      },
+                      ticks: { precision: 0 },
                     },
                   },
                 }}
               />
-            )}
-          </Card>
-        </Col>
+            </div>
+          )}
+        </Card>
 
-        <Col xs={24} md={10}>
-          <Card title="Applications by source" bordered={false}>
-            {totalJobs === 0 ? (
-              <Text type="secondary">
-                Add some jobs to see applications by source.
-              </Text>
-            ) : (
+        <Card
+          title="Applications by source"
+          bordered={false}
+          style={{ ...fullCard, flex: 1, minWidth: 260 }}
+        >
+          {totalJobs === 0 ? (
+            <Text type="secondary">
+              Add some jobs to see applications by source.
+            </Text>
+          ) : (
+            <div style={{ height: 280 }}>
               <Doughnut
                 data={sourceChartData}
                 options={{
                   responsive: true,
+                  maintainAspectRatio: false,
                   plugins: {
                     legend: {
                       position: "bottom",
-                      labels: {
-                        boxWidth: 14,
-                      },
+                      labels: { boxWidth: 14 },
                     },
                   },
                 }}
               />
-            )}
-          </Card>
-        </Col>
-      </Row>
+            </div>
+          )}
+        </Card>
+      </div>
     </div>
   );
 };
