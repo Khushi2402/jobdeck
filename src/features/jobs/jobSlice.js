@@ -1,4 +1,4 @@
-import { createSlice, nanoid } from "@reduxjs/toolkit";
+import { createSlice, nanoid, createSelector } from "@reduxjs/toolkit";
 
 const initialState = {
   byId: {},
@@ -41,11 +41,12 @@ const jobsSlice = createSlice({
 
 export const { addJob, updateJob } = jobsSlice.actions;
 
-// Selector to get all jobs as an array
-export const selectAllJobs = (state) =>
-  state.jobs.allIds.map((id) => state.jobs.byId[id]);
+const selectJobsState = (state) => state.jobs;
 
-// Selector to get a single job by id
+export const selectAllJobs = createSelector([selectJobsState], (jobsState) =>
+  jobsState.allIds.map((id) => jobsState.byId[id])
+);
+
 export const selectJobById = (state, jobId) => state.jobs.byId[jobId];
 
 export default jobsSlice.reducer;

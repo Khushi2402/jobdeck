@@ -1,8 +1,9 @@
+// src/pages/Pipeline/PipelinePage.jsx
 import { useMemo } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { Row, Col, Card, Typography, Tag, Space, Empty } from "antd";
-import { selectAllJobs } from "../../features/jobs/jobSlice";
+import { selectAllJobs, updateJob } from "../../features/jobs/jobSlice";
 import { appTheme } from "../../theme";
 
 const { Title, Text } = Typography;
@@ -17,16 +18,17 @@ const STATUSES = [
 ];
 
 const statusBgColors = {
-  saved: "#ffe9a8", // yellow
-  applied: "#ffcfe3", // pink
-  assessment: "#cfe6ff", // blue
-  interview: "#d9f99d", // green
-  offer: "#e5d9ff", // light purple
-  rejected: "#f5d0d0", // soft red
+  saved: "#ffe9a8",
+  applied: "#ffcfe3",
+  assessment: "#cfe6ff",
+  interview: "#d9f99d",
+  offer: "#e5d9ff",
+  rejected: "#f5d0d0",
 };
 
 const PipelinePage = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const jobs = useSelector(selectAllJobs);
 
   const jobsByStatus = useMemo(() => {
@@ -37,14 +39,35 @@ const PipelinePage = () => {
 
     jobs.forEach((job) => {
       const statusKey = job.status || "saved";
-      if (!grouped[statusKey]) {
-        grouped[statusKey] = [];
-      }
+      if (!grouped[statusKey]) grouped[statusKey] = [];
       grouped[statusKey].push(job);
     });
 
     return grouped;
   }, [jobs]);
+
+  // HTML5 drag handlers
+  const handleDragStart = (event, jobId) => {
+    event.dataTransfer.setData("text/plain", jobId);
+  };
+
+  const handleDragOver = (event) => {
+    // Allow drop
+    event.preventDefault();
+  };
+
+  const handleDrop = (event, newStatus) => {
+    event.preventDefault();
+    const jobId = event.dataTransfer.getData("text/plain");
+    if (!jobId) return;
+
+    dispatch(
+      updateJob({
+        id: jobId,
+        changes: { status: newStatus },
+      })
+    );
+  };
 
   return (
     <div>
@@ -73,114 +96,128 @@ const PipelinePage = () => {
 
               return (
                 <Col key={status.key} xs={24} sm={12} md={8} lg={4}>
-                  <Card
-                    size="small"
-                    bordered={false}
-                    style={{
-                      marginBottom: 16,
-                      borderRadius: 18,
-                      background: bg,
-                    }}
-                    bodyStyle={{ padding: 8 }}
-                    title={
-                      <Space size="small">
-                        <Text strong style={{ fontSize: 13 }}>
-                          {status.label}
-                        </Text>
-                        <Tag
-                          style={{
-                            borderRadius: 999,
-                            padding: "0 8px",
-                            fontSize: 11,
-                          }}
-                        >
-                          {statusJobs.length}
-                        </Tag>
-                      </Space>
-                    }
+                  {/* Make the whole column a drop target */}
+                  <div
+                    onDragOver={handleDragOver}
+                    onDrop={(event) => handleDrop(event, status.key)}
                   >
-                    {statusJobs.length === 0 ? (
-                      <Empty
-                        image={Empty.PRESENTED_IMAGE_SIMPLE}
-                        description={
-                          <Text type="secondary" style={{ fontSize: 11 }}>
-                            No jobs in this stage
+                    <Card
+                      size="small"
+                      bordered={false}
+                      style={{
+                        marginBottom: 16,
+                        borderRadius: 18,
+                        background: bg,
+                        minHeight: 260,
+                      }}
+                      bodyStyle={{ padding: 8 }}
+                      title={
+                        <Space size="small">
+                          <Text strong style={{ fontSize: 13 }}>
+                            {status.label}
                           </Text>
-                        }
-                      />
-                    ) : (
-                      <Space
-                        direction="vertical"
-                        style={{
-                          width: "100%",
-                          maxHeight: "60vh",
-                          overflowY: "auto",
-                        }}
-                        size={8}
-                      >
-                        {statusJobs.map((job) => (
-                          <Card
-                            key={job.id}
-                            size="small"
-                            hoverable
-                            bordered={false}
-                            onClick={() => navigate(`/jobs/${job.id}`)}
+                          <Tag
                             style={{
-                              cursor: "pointer",
-                              borderRadius: 14,
-                              background: "rgba(255,255,255,0.85)",
+                              borderRadius: 999,
+                              padding: "0 8px",
+                              fontSize: 11,
                             }}
-                            bodyStyle={{ padding: 8 }}
                           >
-                            <Space
-                              direction="vertical"
-                              size={2}
-                              style={{ width: "100%" }}
+                            {statusJobs.length}
+                          </Tag>
+                        </Space>
+                      }
+                    >
+                      {statusJobs.length === 0 ? (
+                        <Empty
+                          image={Empty.PRESENTED_IMAGE_SIMPLE}
+                          description={
+                            <Text type="secondary" style={{ fontSize: 11 }}>
+                              No jobs in this stage
+                            </Text>
+                          }
+                        />
+                      ) : (
+                        <Space
+                          direction="vertical"
+                          style={{
+                            width: "100%",
+                            maxHeight: "60vh",
+                            overflowY: "auto",
+                          }}
+                          size={8}
+                        >
+                          {statusJobs.map((job) => (
+                            <Card
+                              key={job.id}
+                              size="small"
+                              hoverable
+                              bordered={false}
+                              draggable
+                              onDragStart={(event) =>
+                                handleDragStart(event, job.id)
+                              }
+                              onDoubleClick={() => navigate(`/jobs/${job.id}`)}
+                              style={{
+                                cursor: "grab",
+                                borderRadius: 14,
+                                background: "rgba(255,255,255,0.9)",
+                              }}
+                              bodyStyle={{ padding: 8 }}
                             >
-                              <Text strong style={{ fontSize: 12 }}>
-                                {job.title}
-                              </Text>
-                              <Text type="secondary" style={{ fontSize: 11 }}>
-                                {job.company}
-                              </Text>
-                              {job.location && (
-                                <Text type="secondary" style={{ fontSize: 10 }}>
-                                  {job.location}
+                              <Space
+                                direction="vertical"
+                                size={2}
+                                style={{ width: "100%" }}
+                              >
+                                <Text strong style={{ fontSize: 12 }}>
+                                  {job.title}
                                 </Text>
-                              )}
-                              {job.tags && job.tags.length > 0 && (
-                                <Space wrap size={4} style={{ marginTop: 4 }}>
-                                  {job.tags.slice(0, 3).map((tag) => (
-                                    <Tag
-                                      key={tag}
-                                      style={{
-                                        fontSize: 10,
-                                        borderRadius: 999,
-                                        padding: "0 6px",
-                                      }}
-                                    >
-                                      {tag}
-                                    </Tag>
-                                  ))}
-                                  {job.tags.length > 3 && (
-                                    <Tag
-                                      style={{
-                                        fontSize: 10,
-                                        borderRadius: 999,
-                                        padding: "0 6px",
-                                      }}
-                                    >
-                                      +{job.tags.length - 3}
-                                    </Tag>
-                                  )}
-                                </Space>
-                              )}
-                            </Space>
-                          </Card>
-                        ))}
-                      </Space>
-                    )}
-                  </Card>
+                                <Text type="secondary" style={{ fontSize: 11 }}>
+                                  {job.company}
+                                </Text>
+                                {job.location && (
+                                  <Text
+                                    type="secondary"
+                                    style={{ fontSize: 10 }}
+                                  >
+                                    {job.location}
+                                  </Text>
+                                )}
+                                {job.tags && job.tags.length > 0 && (
+                                  <Space wrap size={4} style={{ marginTop: 4 }}>
+                                    {job.tags.slice(0, 3).map((tag) => (
+                                      <Tag
+                                        key={tag}
+                                        style={{
+                                          fontSize: 10,
+                                          borderRadius: 999,
+                                          padding: "0 6px",
+                                        }}
+                                      >
+                                        {tag}
+                                      </Tag>
+                                    ))}
+                                    {job.tags.length > 3 && (
+                                      <Tag
+                                        style={{
+                                          fontSize: 10,
+                                          borderRadius: 999,
+                                          padding: "0 6px",
+                                        }}
+                                      >
+                                        +{job.tags.length - 3}
+                                      </Tag>
+                                    )}
+                                  </Space>
+                                )}
+                              </Space>
+                            </Card>
+                          ))}
+                        </Space>
+                      )}
+                    </Card>
+                  </div>
                 </Col>
               );
             })}
