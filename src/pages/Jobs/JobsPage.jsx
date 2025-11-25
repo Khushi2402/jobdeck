@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Button,
-  List,
   Tag,
   Space,
   Typography,
@@ -10,7 +9,9 @@ import {
   Form,
   Input,
   Select,
+  Table,
 } from "antd";
+import { useNavigate } from "react-router-dom";
 import { addJob, selectAllJobs } from "../../features/jobs/jobSlice";
 
 const { Title, Text } = Typography;
@@ -22,6 +23,47 @@ const JobsPage = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
+
+  const navigate = useNavigate();
+
+  const columns = [
+    {
+      title: "Job Title",
+      dataIndex: "title",
+      key: "title",
+      render: (text, record) => (
+        <span style={{ fontWeight: 500 }}>
+          {text} @ {record.company}
+        </span>
+      ),
+    },
+    {
+      title: "Location",
+      dataIndex: "location",
+      key: "location",
+      render: (text) => text || <Text type="secondary">Not specified</Text>,
+    },
+    {
+      title: "Source",
+      dataIndex: "source",
+      key: "source",
+    },
+    {
+      title: "Tags",
+      dataIndex: "tags",
+      key: "tags",
+      render: (tags) =>
+        tags && tags.length > 0 ? (
+          <Space wrap>
+            {tags.map((tag) => (
+              <Tag key={tag}>{tag}</Tag>
+            ))}
+          </Space>
+        ) : (
+          <Text type="secondary">No tags</Text>
+        ),
+    },
+  ];
 
   const handleOpenModal = () => {
     setIsModalOpen(true);
@@ -84,33 +126,15 @@ const JobsPage = () => {
           No jobs yet. Click &quot;Add job&quot; to create your first entry.
         </Text>
       ) : (
-        <List
-          bordered
+        <Table
           dataSource={jobs}
-          renderItem={(job) => (
-            <List.Item>
-              <Space direction="vertical" style={{ width: "100%" }} size={0}>
-                <Space
-                  style={{ width: "100%", justifyContent: "space-between" }}
-                  align="center"
-                >
-                  <Text strong>
-                    {job.title} @ {job.company}
-                  </Text>
-                  <Space>
-                    {job.tags?.map((tag) => (
-                      <Tag key={tag}>{tag}</Tag>
-                    ))}
-                  </Space>
-                </Space>
-                <Space size="small">
-                  <Text type="secondary">{job.location}</Text>
-                  <Text type="secondary">•</Text>
-                  <Text type="secondary">Source: {job.source}</Text>
-                </Space>
-              </Space>
-            </List.Item>
-          )}
+          columns={columns}
+          rowKey="id"
+          pagination={false}
+          onRow={(record) => ({
+            onClick: () => navigate(`/jobs/${record.id}`),
+            style: { cursor: "pointer" },
+          })}
         />
       )}
 
