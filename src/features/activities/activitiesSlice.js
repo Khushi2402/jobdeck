@@ -35,4 +35,18 @@ export const { addActivity } = activitiesSlice.actions;
 export const selectActivitiesByJobId = (state, jobId) =>
   state.activities.byJobId[jobId] || [];
 
+export const selectAllActivities = (state) => {
+  const result = [];
+  const byJobId = state.activities.byJobId;
+
+  Object.keys(byJobId).forEach((jobId) => {
+    byJobId[jobId].forEach((activity) => {
+      result.push(activity);
+    });
+  });
+
+  return result;
+};
+
 export default activitiesSlice.reducer;
+
