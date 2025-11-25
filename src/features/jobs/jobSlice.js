@@ -45,4 +45,7 @@ export const { addJob, updateJob } = jobsSlice.actions;
 export const selectAllJobs = (state) =>
   state.jobs.allIds.map((id) => state.jobs.byId[id]);
 
+// Selector to get a single job by id
+export const selectJobById = (state, jobId) => state.jobs.byId[jobId];
+
 export default jobsSlice.reducer;
