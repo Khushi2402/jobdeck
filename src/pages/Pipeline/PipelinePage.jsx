@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { Row, Col, Card, Typography, Tag, Space, Empty } from "antd";
 import { selectAllJobs } from "../../features/jobs/jobSlice";
+import { appTheme } from "../../theme";
 
 const { Title, Text } = Typography;
 
@@ -14,6 +15,15 @@ const STATUSES = [
   { key: "offer", label: "Offer" },
   { key: "rejected", label: "Rejected" },
 ];
+
+const statusBgColors = {
+  saved: "#ffe9a8", // yellow
+  applied: "#ffcfe3", // pink
+  assessment: "#cfe6ff", // blue
+  interview: "#d9f99d", // green
+  offer: "#e5d9ff", // light purple
+  rejected: "#f5d0d0", // soft red
+};
 
 const PipelinePage = () => {
   const navigate = useNavigate();
@@ -38,89 +48,145 @@ const PipelinePage = () => {
 
   return (
     <div>
-      <Title level={3} style={{ marginBottom: 16 }}>
-        Pipeline
-      </Title>
+      <Space direction="vertical" size={16} style={{ width: "100%" }}>
+        <div>
+          <Title level={3} style={{ marginBottom: 4 }}>
+            Pipeline
+          </Title>
+          <Text type="secondary">
+            Visualize all your applications by stage and jump into details
+            quickly.
+          </Text>
+        </div>
 
-      <Row gutter={16} align="top">
-        {STATUSES.map((status) => {
-          const statusJobs = jobsByStatus[status.key] || [];
+        <Card
+          bordered={false}
+          style={{
+            borderRadius: appTheme.radii.card,
+            background: appTheme.colors.surface,
+          }}
+        >
+          <Row gutter={16} align="top">
+            {STATUSES.map((status) => {
+              const statusJobs = jobsByStatus[status.key] || [];
+              const bg = statusBgColors[status.key] || appTheme.colors.surface;
 
-          return (
-            <Col key={status.key} xs={24} sm={12} md={8} lg={4}>
-              <Card
-                title={
-                  <Space size="small">
-                    <Text strong>{status.label}</Text>
-                    <Tag>{statusJobs.length}</Tag>
-                  </Space>
-                }
-                size="small"
-                bodyStyle={{ padding: 8 }}
-                style={{ marginBottom: 16, height: "70vh", overflowY: "auto" }}
-              >
-                {statusJobs.length === 0 ? (
-                  <Empty
-                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    description={
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        No jobs in this stage
-                      </Text>
-                    }
-                  />
-                ) : (
-                  <Space direction="vertical" style={{ width: "100%" }}>
-                    {statusJobs.map((job) => (
-                      <Card
-                        key={job.id}
-                        size="small"
-                        hoverable
-                        onClick={() => navigate(`/jobs/${job.id}`)}
-                        style={{ cursor: "pointer" }}
-                      >
-                        <Space
-                          direction="vertical"
-                          size={2}
-                          style={{ width: "100%" }}
+              return (
+                <Col key={status.key} xs={24} sm={12} md={8} lg={4}>
+                  <Card
+                    size="small"
+                    bordered={false}
+                    style={{
+                      marginBottom: 16,
+                      borderRadius: 18,
+                      background: bg,
+                    }}
+                    bodyStyle={{ padding: 8 }}
+                    title={
+                      <Space size="small">
+                        <Text strong style={{ fontSize: 13 }}>
+                          {status.label}
+                        </Text>
+                        <Tag
+                          style={{
+                            borderRadius: 999,
+                            padding: "0 8px",
+                            fontSize: 11,
+                          }}
                         >
-                          <Text strong style={{ fontSize: 13 }}>
-                            {job.title}
+                          {statusJobs.length}
+                        </Tag>
+                      </Space>
+                    }
+                  >
+                    {statusJobs.length === 0 ? (
+                      <Empty
+                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                        description={
+                          <Text type="secondary" style={{ fontSize: 11 }}>
+                            No jobs in this stage
                           </Text>
-                          <Text type="secondary" style={{ fontSize: 12 }}>
-                            {job.company}
-                          </Text>
-                          {job.location && (
-                            <Text type="secondary" style={{ fontSize: 11 }}>
-                              {job.location}
-                            </Text>
-                          )}
-                          {job.tags && job.tags.length > 0 && (
-                            <Space wrap size={4} style={{ marginTop: 4 }}>
-                              {job.tags.slice(0, 3).map((tag) => (
-                                <Tag
-                                  key={tag}
-                                  style={{ fontSize: 10, padding: "0 4px" }}
-                                >
-                                  {tag}
-                                </Tag>
-                              ))}
-                              {job.tags.length > 3 && (
-                                <Tag style={{ fontSize: 10, padding: "0 4px" }}>
-                                  +{job.tags.length - 3}
-                                </Tag>
+                        }
+                      />
+                    ) : (
+                      <Space
+                        direction="vertical"
+                        style={{
+                          width: "100%",
+                          maxHeight: "60vh",
+                          overflowY: "auto",
+                        }}
+                        size={8}
+                      >
+                        {statusJobs.map((job) => (
+                          <Card
+                            key={job.id}
+                            size="small"
+                            hoverable
+                            bordered={false}
+                            onClick={() => navigate(`/jobs/${job.id}`)}
+                            style={{
+                              cursor: "pointer",
+                              borderRadius: 14,
+                              background: "rgba(255,255,255,0.85)",
+                            }}
+                            bodyStyle={{ padding: 8 }}
+                          >
+                            <Space
+                              direction="vertical"
+                              size={2}
+                              style={{ width: "100%" }}
+                            >
+                              <Text strong style={{ fontSize: 12 }}>
+                                {job.title}
+                              </Text>
+                              <Text type="secondary" style={{ fontSize: 11 }}>
+                                {job.company}
+                              </Text>
+                              {job.location && (
+                                <Text type="secondary" style={{ fontSize: 10 }}>
+                                  {job.location}
+                                </Text>
+                              )}
+                              {job.tags && job.tags.length > 0 && (
+                                <Space wrap size={4} style={{ marginTop: 4 }}>
+                                  {job.tags.slice(0, 3).map((tag) => (
+                                    <Tag
+                                      key={tag}
+                                      style={{
+                                        fontSize: 10,
+                                        borderRadius: 999,
+                                        padding: "0 6px",
+                                      }}
+                                    >
+                                      {tag}
+                                    </Tag>
+                                  ))}
+                                  {job.tags.length > 3 && (
+                                    <Tag
+                                      style={{
+                                        fontSize: 10,
+                                        borderRadius: 999,
+                                        padding: "0 6px",
+                                      }}
+                                    >
+                                      +{job.tags.length - 3}
+                                    </Tag>
+                                  )}
+                                </Space>
                               )}
                             </Space>
-                          )}
-                        </Space>
-                      </Card>
-                    ))}
-                  </Space>
-                )}
-              </Card>
-            </Col>
-          );
-        })}
-      </Row>
+                          </Card>
+                        ))}
+                      </Space>
+                    )}
+                  </Card>
+                </Col>
+              );
+            })}
+          </Row>
+        </Card>
+      </Space>
     </div>
   );
 };

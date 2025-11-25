@@ -10,10 +10,12 @@ import {
   Input,
   Select,
   Table,
+  Card,
 } from "antd";
 import { useNavigate } from "react-router-dom";
 import { addJob, selectAllJobs } from "../../features/jobs/jobSlice";
 import { useUIStore } from "../../store/uiStore";
+import { appTheme } from "../../theme";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -158,92 +160,111 @@ const JobsPage = () => {
 
   return (
     <div>
-      <Space
-        style={{
-          marginBottom: 16,
-          width: "100%",
-          justifyContent: "space-between",
-        }}
-        align="center"
-      >
-        <Title level={3} style={{ margin: 0 }}>
-          Jobs
-        </Title>
-        <Button type="primary" onClick={handleOpenModal}>
-          Add job
-        </Button>
-      </Space>
+      <Space direction="vertical" size={16} style={{ width: "100%" }}>
+        {/* Header row */}
+        <Space
+          style={{
+            width: "100%",
+            justifyContent: "space-between",
+            alignItems: "flex-end",
+          }}
+        >
+          <div>
+            <Title level={3} style={{ marginBottom: 4 }}>
+              Jobs
+            </Title>
+            <Text type="secondary">
+              Track all your applications, statuses, and sources in one place.
+            </Text>
+          </div>
 
-      <Space
-        style={{
-          marginBottom: 16,
-          width: "100%",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-        }}
-        align="center"
-      >
-        <Space wrap>
-          <Select
-            value={statusFilter}
-            style={{ width: 180 }}
-            onChange={(value) => setJobFilters({ status: value })}
-          >
-            <Option value="all">All statuses</Option>
-            <Option value="saved">Saved</Option>
-            <Option value="applied">Applied</Option>
-            <Option value="assessment">Assessment</Option>
-            <Option value="interview">Interview</Option>
-            <Option value="offer">Offer</Option>
-            <Option value="rejected">Rejected</Option>
-          </Select>
-
-          <Select
-            value={sourceFilter}
-            style={{ width: 180 }}
-            onChange={(value) => setJobFilters({ source: value })}
-          >
-            <Option value="all">All sources</Option>
-            <Option value="LinkedIn">LinkedIn</Option>
-            <Option value="Naukri">Naukri</Option>
-            <Option value="Company Site">Company Site</Option>
-            <Option value="Referral">Referral</Option>
-            <Option value="Other">Other</Option>
-          </Select>
+          <Button type="primary" onClick={handleOpenModal}>
+            Add job
+          </Button>
         </Space>
 
-        <Search
-          placeholder="Search by title or company"
-          allowClear
-          value={search}
-          onChange={(e) => setJobFilters({ search: e.target.value })}
-          style={{ maxWidth: 260 }}
-        />
+        {/* Filters + table inside a soft card */}
+        <Card
+          bordered={false}
+          style={{
+            borderRadius: 18,
+            background: appTheme.colors.surface,
+          }}
+        >
+          {/* Filters row */}
+          <Space
+            style={{
+              marginBottom: 16,
+              width: "100%",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+            }}
+            align="center"
+          >
+            <Space wrap>
+              <Select
+                value={statusFilter}
+                style={{ width: 180 }}
+                onChange={(value) => setJobFilters({ status: value })}
+              >
+                <Option value="all">All statuses</Option>
+                <Option value="saved">Saved</Option>
+                <Option value="applied">Applied</Option>
+                <Option value="assessment">Assessment</Option>
+                <Option value="interview">Interview</Option>
+                <Option value="offer">Offer</Option>
+                <Option value="rejected">Rejected</Option>
+              </Select>
+
+              <Select
+                value={sourceFilter}
+                style={{ width: 180 }}
+                onChange={(value) => setJobFilters({ source: value })}
+              >
+                <Option value="all">All sources</Option>
+                <Option value="LinkedIn">LinkedIn</Option>
+                <Option value="Naukri">Naukri</Option>
+                <Option value="Company Site">Company Site</Option>
+                <Option value="Referral">Referral</Option>
+                <Option value="Other">Other</Option>
+              </Select>
+            </Space>
+
+            <Search
+              placeholder="Search by title or company"
+              allowClear
+              value={search}
+              onChange={(e) => setJobFilters({ search: e.target.value })}
+              style={{ maxWidth: 260 }}
+            />
+          </Space>
+
+          {/* Table / empty states */}
+          {jobs.length === 0 ? (
+            <Text type="secondary">
+              No jobs yet. Click &quot;Add job&quot; to create your first entry.
+            </Text>
+          ) : filteredJobs.length === 0 ? (
+            <Text type="secondary">
+              No jobs match the current filters. Try changing filters or
+              clearing the search.
+            </Text>
+          ) : (
+            <Table
+              dataSource={filteredJobs}
+              columns={columns}
+              rowKey="id"
+              pagination={false}
+              onRow={(record) => ({
+                onClick: () => navigate(`/jobs/${record.id}`),
+                style: { cursor: "pointer" },
+              })}
+            />
+          )}
+        </Card>
       </Space>
 
-      {jobs.length === 0 ? (
-        <Text type="secondary">
-          No jobs yet. Click &quot;Add job&quot; to create your first entry.
-        </Text>
-      ) : filteredJobs.length === 0 ? (
-        <Text type="secondary">
-          No jobs match the current filters. Try changing filters or clearing
-          the search.
-        </Text>
-      ) : (
-        <Table
-          dataSource={filteredJobs}
-          columns={columns}
-          rowKey="id"
-          pagination={false}
-          onRow={(record) => ({
-            onClick: () => navigate(`/jobs/${record.id}`),
-            style: { cursor: "pointer" },
-          })}
-        />
-      )}
-
-      {/* Add Job Modal */}
+      {/* Add Job Modal (unchanged) */}
       <Modal
         title="Add Job"
         open={isModalOpen}
