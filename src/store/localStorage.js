@@ -18,6 +18,7 @@ export const saveState = (state) => {
     const partial = {
       jobs: state.jobs,
       activities: state.activities,
+      profile: state.profile,
     };
     const serializedState = JSON.stringify(partial);
     localStorage.setItem(STORAGE_KEY, serializedState);

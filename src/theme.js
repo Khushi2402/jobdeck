@@ -5,8 +5,8 @@ export const appTheme = {
     primary: "#f97391", // soft pink
     background: "#fff7ec", // warm pastel background
     surface: "#fffdf8", // cards / content background
-    sidebarBg: "#111322", // dark but neutral for contrast
-    sidebarText: "#f9fafb",
+    sidebarBg: "#f5ede4",
+    sidebarText: "#000000",
     sidebarAccent: "#f97391", // little pink dot / highlights
     textMain: "#111827",
     textMuted: "#6b7280",

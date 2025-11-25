@@ -11,6 +11,7 @@ import MainLayout from "./layout/MainLayout";
 import DashboardPage from "./pages/Dashboard/DashboardPage";
 import JobsPage from "./pages/Jobs/JobsPage";
 import PipelinePage from "./pages/Pipeline/PipelinePage";
+import ProfilePage from "./pages/Profile/ProfilePage";
 
 const ProtectedRoute = ({ children }) => (
   <>
@@ -44,6 +45,7 @@ const App = () => {
         <Route path="/" element={<DashboardPage />} />
         <Route path="/pipeline" element={<PipelinePage />} />
         <Route path="/jobs" element={<JobsPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
