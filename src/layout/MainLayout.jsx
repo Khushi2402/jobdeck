@@ -5,7 +5,6 @@ import {
   AppstoreOutlined,
   ApartmentOutlined,
   TableOutlined,
-  UserOutlined,
 } from "@ant-design/icons";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { SignedIn, UserButton, useUser } from "@clerk/clerk-react";
@@ -275,14 +274,22 @@ const MainLayout = ({ children }) => {
             zIndex: 10,
           }}
         >
-          <Text
-            style={{
-              fontWeight: 500,
-              fontSize: 16,
-            }}
-          >
-            Job Deck
-          </Text>
+          {collapsed ? (
+            <>
+              <Text
+                style={{
+                  fontWeight: 500,
+                  fontSize: 16,
+                }}
+              >
+                Job Deck
+              </Text>
+            </>
+          ) : (
+            <>
+              <div></div>
+            </>
+          )}
 
           <SignedIn>
             <div
