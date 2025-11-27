@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Button,
@@ -13,13 +13,17 @@ import {
   Card,
   Popconfirm,
   message,
+  Spin,
 } from "antd";
 import { useNavigate } from "react-router-dom";
 import {
-  addJob,
   selectAllJobs,
-  updateJob,
-  deleteJob,
+  selectJobsStatus,
+  selectJobsError,
+  fetchJobs,
+  createJob,
+  saveJobUpdates,
+  removeJob,
 } from "../../features/jobs/jobSlice";
 import { removeActivitiesForJob } from "../../features/activities/activitiesSlice";
 import { useUIStore } from "../../store/uiStore";
@@ -31,9 +35,13 @@ const { Search } = Input;
 
 const JobsPage = () => {
   const dispatch = useDispatch();
-  const jobs = useSelector(selectAllJobs);
-  const { jobFilters, setJobFilters } = useUIStore();
+  const navigate = useNavigate();
 
+  const jobs = useSelector(selectAllJobs);
+  const jobsStatus = useSelector(selectJobsStatus);
+  const jobsError = useSelector(selectJobsError);
+
+  const { jobFilters, setJobFilters } = useUIStore();
   const { status: statusFilter, source: sourceFilter, search } = jobFilters;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -41,7 +49,10 @@ const JobsPage = () => {
   const [editingJobId, setEditingJobId] = useState(null);
   const [modalMode, setModalMode] = useState("add"); // 'add' | 'edit'
 
-  const navigate = useNavigate();
+  // Load jobs from backend on mount
+  useEffect(() => {
+    dispatch(fetchJobs());
+  }, [dispatch]);
 
   const statusColors = {
     saved: "default",
@@ -59,7 +70,7 @@ const JobsPage = () => {
       key: "title",
       render: (text, record) => (
         <span style={{ fontWeight: 500 }}>
-          {text} @ {record.company}
+          {text} {record.company ? `@ ${record.company}` : ""}
         </span>
       ),
     },
@@ -67,12 +78,15 @@ const JobsPage = () => {
       title: "Location",
       dataIndex: "location",
       key: "location",
-      render: (text) => text || <Text type="secondary">Not specified</Text>,
+      render: (text) =>
+        text ? text : <Text type="secondary">Not specified</Text>,
     },
     {
       title: "Source",
       dataIndex: "source",
       key: "source",
+      render: (text) =>
+        text ? text : <Text type="secondary">Not specified</Text>,
     },
     {
       title: "Status",
@@ -184,46 +198,86 @@ const JobsPage = () => {
       location: job.location,
       source: job.source,
       tags: job.tags,
-      link: job.link,
+      link: job.link || job.url, // support both old local + new backend data
     });
     setIsModalOpen(true);
   };
 
   const handleCancel = () => {
     setIsModalOpen(false);
-    form.resetFields();
-  };
-
-  const handleFinish = (values) => {
-    const payload = {
-      ...values,
-      tags: values.tags || [],
-      status: values.status || undefined, // we still default to 'saved' in addJob
-    };
-
-    if (modalMode === "add") {
-      dispatch(addJob(payload));
-      message.success("Job added");
-    } else if (modalMode === "edit" && editingJobId) {
-      dispatch(
-        updateJob({
-          id: editingJobId,
-          changes: payload,
-        })
-      );
-      message.success("Job updated");
-    }
-
-    setIsModalOpen(false);
     setEditingJobId(null);
     form.resetFields();
   };
 
-  const handleDeleteJob = (jobId) => {
-    dispatch(deleteJob(jobId));
-    dispatch(removeActivitiesForJob(jobId));
-    message.success("Job deleted");
+  const handleFinish = (values) => {
+    // Map form fields -> API payload
+    const basePayload = {
+      title: values.title,
+      company: values.company,
+      location: values.location || null,
+      source: values.source || null,
+      url: values.link || null,
+      // tags are UI-only for now (not persisted in DB yet)
+    };
+
+    if (modalMode === "add") {
+      const payload = {
+        ...basePayload,
+        status: "saved", // backend requires status; default to 'saved'
+      };
+
+      dispatch(createJob(payload))
+        .unwrap()
+        .then(() => {
+          message.success("Job added");
+          setIsModalOpen(false);
+          setEditingJobId(null);
+          form.resetFields();
+        })
+        .catch((err) => {
+          console.error(err);
+          message.error("Failed to add job");
+        });
+    } else if (modalMode === "edit" && editingJobId) {
+      const updates = {
+        ...basePayload,
+      };
+
+      dispatch(
+        saveJobUpdates({
+          id: editingJobId,
+          updates,
+        })
+      )
+        .unwrap()
+        .then(() => {
+          message.success("Job updated");
+          setIsModalOpen(false);
+          setEditingJobId(null);
+          form.resetFields();
+        })
+        .catch((err) => {
+          console.error(err);
+          message.error("Failed to update job");
+        });
+    }
   };
+
+  const handleDeleteJob = (jobId) => {
+    dispatch(removeJob(jobId))
+      .unwrap()
+      .then(() => {
+        // still remove activities locally
+        dispatch(removeActivitiesForJob(jobId));
+        message.success("Job deleted");
+      })
+      .catch((err) => {
+        console.error(err);
+        message.error("Failed to delete job");
+      });
+  };
+
+  const isLoading = jobsStatus === "loading";
 
   return (
     <div>
@@ -249,6 +303,11 @@ const JobsPage = () => {
             Add job
           </Button>
         </Space>
+
+        {/* Error state (if backend failed) */}
+        {jobsStatus === "failed" && jobsError && (
+          <Text type="danger">Failed to load jobs: {jobsError}</Text>
+        )}
 
         {/* Filters + table inside a soft card */}
         <Card
@@ -306,8 +365,13 @@ const JobsPage = () => {
             />
           </Space>
 
-          {/* Table / empty states */}
-          {jobs.length === 0 ? (
+          {/* Table / loading / empty states */}
+          {isLoading && jobs.length === 0 ? (
+            <Space>
+              <Spin size="small" />
+              <Text type="secondary">Loading jobs…</Text>
+            </Space>
+          ) : jobs.length === 0 ? (
             <Text type="secondary">
               No jobs yet. Click &quot;Add job&quot; to create your first entry.
             </Text>
@@ -322,6 +386,7 @@ const JobsPage = () => {
               columns={columns}
               rowKey="id"
               pagination={false}
+              loading={isLoading}
               onRow={(record) => ({
                 onClick: () => navigate(`/jobs/${record.id}`),
                 style: { cursor: "pointer" },
@@ -331,7 +396,7 @@ const JobsPage = () => {
         </Card>
       </Space>
 
-      {/* Add Job Modal (unchanged) */}
+      {/* Add / Edit Job Modal */}
       <Modal
         title={modalMode === "add" ? "Add Job" : "Edit Job"}
         open={isModalOpen}
