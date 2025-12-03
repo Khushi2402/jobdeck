@@ -1,4 +1,7 @@
-// server/prisma/schema.prisma
+// -------------------------------------------
+// Prisma Schema for JobDeck
+// PostgreSQL (Supabase)
+// -------------------------------------------
 
 generator client {
   provider = "prisma-client-js"
@@ -9,23 +12,150 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Minimal schema for v2 (we'll extend later)
+// ===========================================
+// USER MODEL (Clerk user id as primary key)
+// ===========================================
+
 model User {
-  id        String   @id           // Clerk userId
+  id        String  @id           // Clerk userId
   jobs      Job[]
   createdAt DateTime @default(now())
 }
 
+// ===========================================
+// JOB MODEL
+// ===========================================
+
 model Job {
-  id          String   @id @default(cuid())
-  user        User     @relation(fields: [userId], references: [id])
-  userId      String
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+
+  title     String
+  company   String?
+  status    String   // saved, applied, interview, etc.
+  location  String?
+  source    String?
+  url       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  activities Activity[]
+}
+
+// ===========================================
+// ACTIVITY MODEL (Timeline events per job)
+// ===========================================
+
+model Activity {
+  id          String   @id @default(uuid())
+
+  jobId       String
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  type        String
   title       String
-  company     String?
-  status      String   // saved, applied, interview, offer, rejected
-  location    String?
-  source      String?  // e.g. linkedin, naukri, referral
-  url         String?
+  description String?
+  date        DateTime @default(now())
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// ===========================================
+// USER PROFILE (1:1 with Clerk User)
+// ===========================================
+
+model Profile {
+  id            String     @id @default(uuid())
+  userId        String     @unique
+
+  fullName      String?
+  title         String?
+  location      String?
+  workMode      String?   // remote / hybrid / onsite
+  summary       String?
+  careerFocus   String?
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  // Relations
+  experiences   Experience[]
+  educations    Education[]
+  skills        Skill[]
+  resume        Resume?
+}
+
+// ===========================================
+// EXPERIENCE MODEL
+// ===========================================
+
+model Experience {
+  id          String    @id @default(uuid())
+  profileId   String
+  profile     Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  company     String
+  title       String
+  from        DateTime
+  to          DateTime?
+  current     Boolean   @default(false)
+
+  description String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// ===========================================
+// EDUCATION MODEL
+// ===========================================
+
+model Education {
+  id           String    @id @default(uuid())
+  profileId    String
+  profile      Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  institution  String
+  degree       String
+  from         DateTime
+  to           DateTime?
+  current      Boolean   @default(false)
+
+  description  String?
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+// ===========================================
+// SKILL MODEL
+// ===========================================
+
+model Skill {
+  id        String    @id @default(uuid())
+  profileId String
+  profile   Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  name      String
+
+  createdAt DateTime  @default(now())
+}
+
+// ===========================================
+// RESUME MODEL (1:1 with Profile)
+// ===========================================
+
+model Resume {
+  id         String    @id @default(uuid())
+  profileId  String    @unique
+  profile    Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  url        String
+  fileName   String
+  fileSize   Int
+  uploadedAt DateTime  @default(now())
 }

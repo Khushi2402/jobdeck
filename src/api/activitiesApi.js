@@ -1,6 +1,5 @@
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
-
 const buildUrl = (path) => `${API_BASE_URL}${path}`;
 
 async function callApi(path, opts = {}) {
@@ -12,14 +11,14 @@ async function callApi(path, opts = {}) {
   return res.json();
 }
 
-export async function fetchJobsApi(token) {
-  return callApi("/api/jobs", {
+export async function fetchActivitiesApi(jobId, token) {
+  return callApi(`/api/jobs/${jobId}/activities`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
 }
 
-export async function createJobApi(payload, token) {
-  return callApi("/api/jobs", {
+export async function createActivityApi(jobId, payload, token) {
+  return callApi(`/api/jobs/${jobId}/activities`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -29,19 +28,8 @@ export async function createJobApi(payload, token) {
   });
 }
 
-export async function updateJobApi(id, payload, token) {
-  return callApi(`/api/jobs/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(payload),
-  });
-}
-
-export async function deleteJobApi(id, token) {
-  return callApi(`/api/jobs/${id}`, {
+export async function deleteActivityApi(activityId, token) {
+  return callApi(`/api/activities/${activityId}`, {
     method: "DELETE",
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });

@@ -23,38 +23,41 @@ export const fetchJobs = createAsyncThunk("jobs/fetchJobs", async () => {
   return jobs;
 });
 
-// Create a new job (used by JobsPage)
+// createJob
 export const createJob = createAsyncThunk(
   "jobs/createJob",
-  async (jobPayload) => {
-    const created = await createJobApi(jobPayload);
+  async ({ payload, token }) => {
+    const created = await createJobApi(payload, token);
     return created;
   }
 );
 
-// Update job with `{ id, updates }` (used by JobsPage)
+// saveJobUpdates
 export const saveJobUpdates = createAsyncThunk(
   "jobs/saveJobUpdates",
-  async ({ id, updates }) => {
-    const updated = await updateJobApi(id, updates);
+  async ({ id, updates, token }) => {
+    const updated = await updateJobApi(id, updates, token);
     return updated;
   }
 );
 
-// Update job with `{ id, changes }` (used by PipelinePage)
+// updateJob (used by pipeline)
 export const updateJob = createAsyncThunk(
   "jobs/updateJob",
-  async ({ id, changes }) => {
-    const updated = await updateJobApi(id, changes);
+  async ({ id, changes, token }) => {
+    const updated = await updateJobApi(id, changes, token);
     return updated;
   }
 );
 
-// Delete job (used everywhere)
-export const removeJob = createAsyncThunk("jobs/removeJob", async (id) => {
-  await deleteJobApi(id);
-  return id;
-});
+// removeJob
+export const removeJob = createAsyncThunk(
+  "jobs/removeJob",
+  async ({ id, token }) => {
+    await deleteJobApi(id, token);
+    return id;
+  }
+);
 
 // --------- Helpers ---------
 

@@ -1,3 +1,5 @@
+// src/pages/Jobs/JobsPage.jsx
+import { useAuth } from "@clerk/clerk-react";
 import { useState, useMemo, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -49,10 +51,25 @@ const JobsPage = () => {
   const [editingJobId, setEditingJobId] = useState(null);
   const [modalMode, setModalMode] = useState("add"); // 'add' | 'edit'
 
-  // Load jobs from backend on mount
+  const { getToken } = useAuth();
+
+  // Load jobs from backend on mount (try with token; fallback if token fails)
   useEffect(() => {
-    dispatch(fetchJobs());
-  }, [dispatch]);
+    (async () => {
+      try {
+        const token = await getToken();
+        await dispatch(fetchJobs({ token })).unwrap();
+      } catch (err) {
+        // If token fetch/dispatch fails, fallback to no-token fetch
+        try {
+          await dispatch(fetchJobs()).unwrap();
+        } catch (e) {
+          // swallow here; UI will show error via jobsStatus/jobsError
+          console.error("Failed to fetch jobs:", e);
+        }
+      }
+    })();
+  }, [dispatch, getToken]);
 
   const statusColors = {
     saved: "default",
@@ -198,7 +215,7 @@ const JobsPage = () => {
       location: job.location,
       source: job.source,
       tags: job.tags,
-      link: job.link || job.url, // support both old local + new backend data
+      link: job.link || job.url,
     });
     setIsModalOpen(true);
   };
@@ -209,7 +226,8 @@ const JobsPage = () => {
     form.resetFields();
   };
 
-  const handleFinish = (values) => {
+  // Add / Edit form submit
+  const handleFinish = async (values) => {
     // Map form fields -> API payload
     const basePayload = {
       title: values.title,
@@ -217,64 +235,52 @@ const JobsPage = () => {
       location: values.location || null,
       source: values.source || null,
       url: values.link || null,
-      // tags are UI-only for now (not persisted in DB yet)
     };
 
-    if (modalMode === "add") {
-      const payload = {
-        ...basePayload,
-        status: "saved", // backend requires status; default to 'saved'
-      };
+    try {
+      const token = await getToken();
 
-      dispatch(createJob(payload))
-        .unwrap()
-        .then(() => {
-          message.success("Job added");
-          setIsModalOpen(false);
-          setEditingJobId(null);
-          form.resetFields();
-        })
-        .catch((err) => {
-          console.error(err);
-          message.error("Failed to add job");
-        });
-    } else if (modalMode === "edit" && editingJobId) {
-      const updates = {
-        ...basePayload,
-      };
+      if (modalMode === "add") {
+        const payload = {
+          ...basePayload,
+          status: "saved",
+        };
 
-      dispatch(
-        saveJobUpdates({
-          id: editingJobId,
-          updates,
-        })
-      )
-        .unwrap()
-        .then(() => {
-          message.success("Job updated");
-          setIsModalOpen(false);
-          setEditingJobId(null);
-          form.resetFields();
-        })
-        .catch((err) => {
-          console.error(err);
-          message.error("Failed to update job");
-        });
+        await dispatch(createJob({ payload, token })).unwrap();
+        message.success("Job added");
+        setIsModalOpen(false);
+        setEditingJobId(null);
+        form.resetFields();
+      } else if (modalMode === "edit" && editingJobId) {
+        const updates = {
+          ...basePayload,
+        };
+
+        await dispatch(
+          saveJobUpdates({ id: editingJobId, updates, token })
+        ).unwrap();
+        message.success("Job updated");
+        setIsModalOpen(false);
+        setEditingJobId(null);
+        form.resetFields();
+      }
+    } catch (err) {
+      console.error("Job save error:", err);
+      message.error("Failed to save job");
     }
   };
 
-  const handleDeleteJob = (jobId) => {
-    dispatch(removeJob(jobId))
-      .unwrap()
-      .then(() => {
-        // still remove activities locally
-        dispatch(removeActivitiesForJob(jobId));
-        message.success("Job deleted");
-      })
-      .catch((err) => {
-        console.error(err);
-        message.error("Failed to delete job");
-      });
+  const handleDeleteJob = async (jobId) => {
+    try {
+      const token = await getToken();
+      await dispatch(removeJob({ id: jobId, token })).unwrap();
+      // still remove activities locally
+      dispatch(removeActivitiesForJob(jobId));
+      message.success("Job deleted");
+    } catch (err) {
+      console.error("Delete job error:", err);
+      message.error("Failed to delete job");
+    }
   };
 
   const isLoading = jobsStatus === "loading";
@@ -352,6 +358,7 @@ const JobsPage = () => {
                 <Option value="Naukri">Naukri</Option>
                 <Option value="Company Site">Company Site</Option>
                 <Option value="Referral">Referral</Option>
+                <Option value="Main">Mail</Option>
                 <Option value="Other">Other</Option>
               </Select>
             </Space>
@@ -440,6 +447,7 @@ const JobsPage = () => {
               <Option value="Naukri">Naukri</Option>
               <Option value="Company Site">Company Site</Option>
               <Option value="Referral">Referral</Option>
+              <Option value="Main">Mail</Option>
               <Option value="Other">Other</Option>
             </Select>
           </Form.Item>

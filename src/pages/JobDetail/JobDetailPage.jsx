@@ -1,3 +1,6 @@
+// src/pages/JobDetail/JobDetailPage.jsx
+import { useAuth } from "@clerk/clerk-react";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -11,11 +14,13 @@ import {
   Form,
   Input,
   Select,
+  message,
 } from "antd";
 import { selectJobById, updateJob } from "../../features/jobs/jobSlice";
 import {
   addActivity,
   selectActivitiesByJobId,
+  fetchActivitiesByJob,
 } from "../../features/activities/activitiesSlice";
 
 const { Title, Text, Paragraph } = Typography;
@@ -23,6 +28,7 @@ const { TextArea } = Input;
 const { Option } = Select;
 
 const JobDetailPage = () => {
+  const { getToken } = useAuth();
   const { jobId } = useParams();
   const navigate = useNavigate();
 
@@ -35,27 +41,60 @@ const JobDetailPage = () => {
 
   const [form] = Form.useForm();
 
-  const handleAddActivity = (values) => {
-    dispatch(
-      addActivity({
-        jobId,
-        type: values.type,
-        title: values.title,
-        description: values.description,
-      })
-    );
-    form.resetFields();
+  // Load activities for this job when detail page opens
+  useEffect(() => {
+    (async () => {
+      try {
+        const token = await getToken();
+        await dispatch(fetchActivitiesByJob({ jobId, token })).unwrap();
+      } catch (err) {
+        // fallback if fetchActivitiesByJob doesn't accept token
+        try {
+          await dispatch(fetchActivitiesByJob(jobId)).unwrap();
+        } catch (e) {
+          console.error("Failed to fetch activities", e);
+        }
+      }
+    })();
+  }, [dispatch, getToken, jobId]);
+
+  const handleAddActivity = async (values) => {
+    try {
+      const token = await getToken();
+      await dispatch(
+        addActivity({
+          jobId,
+          type: values.type,
+          title: values.title,
+          description: values.description,
+          token,
+        })
+      ).unwrap();
+      form.resetFields();
+      message.success("Activity added");
+    } catch (err) {
+      console.error("Add activity error:", err);
+      message.error("Failed to add activity");
+    }
   };
 
-  const handleStatusChange = (value) => {
-    dispatch(
-      updateJob({
-        id: jobId,
-        changes: {
-          status: value,
-        },
-      })
-    );
+  const handleStatusChange = async (value) => {
+    try {
+      const token = await getToken();
+      await dispatch(
+        updateJob({
+          id: jobId,
+          changes: {
+            status: value,
+          },
+          token,
+        })
+      ).unwrap();
+      message.success("Status updated");
+    } catch (err) {
+      console.error("Status update error:", err);
+      message.error("Failed to change status");
+    }
   };
 
   if (!job) {

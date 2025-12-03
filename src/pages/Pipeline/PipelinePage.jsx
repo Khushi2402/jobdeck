@@ -1,4 +1,5 @@
 // src/pages/Pipeline/PipelinePage.jsx
+import { useAuth } from "@clerk/clerk-react";
 import { useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -27,6 +28,8 @@ const statusBgColors = {
 };
 
 const PipelinePage = () => {
+  const { getToken } = useAuth();
+
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const jobs = useSelector(selectAllJobs);
@@ -56,17 +59,23 @@ const PipelinePage = () => {
     event.preventDefault();
   };
 
-  const handleDrop = (event, newStatus) => {
+  const handleDrop = async (event, newStatus) => {
     event.preventDefault();
     const jobId = event.dataTransfer.getData("text/plain");
     if (!jobId) return;
 
-    dispatch(
-      updateJob({
-        id: jobId,
-        changes: { status: newStatus },
-      })
-    );
+    try {
+      const token = await getToken();
+      await dispatch(
+        updateJob({
+          id: jobId,
+          changes: { status: newStatus },
+          token,
+        })
+      ).unwrap();
+    } catch (err) {
+      console.error("Pipeline move error:", err);
+    }
   };
 
   return (
